@@ -43,20 +43,52 @@ class TestEncryptionEllipticCurve extends Command
      */
     public function handle()
     {
-       
+        //ECIES is a pretty generate paradigm for generation an ephemeral ECDH key, 
+        //doing a kex with someone's public key, 
+        //runnign the result through a KDF,
+        // and then using that as a symmetric key to actually encrypt that data.
+
+        
+       $private_key_simulation = "";
+       $public_key_simulation = "";
+
+       $ephemeral_public_key_signedmessage_received = "";
+
+       $standard_decrypted_message = "";
+
+
 
         echo "Beigining Testing ECC Algorithm".PHP_EOL.PHP_EOL;
 
         $ephemeralPublickey_uncompressed_raw = "BOdoXP+9Aq473SnGwg3JU1aiNpsd9vH2ognq4PtDtlLGa3Kj8TPf+jaQNPyDSkh3JUhiS0KyrrlWhAgNZKHYF2Y=";
 
         $ephemeral_point = $this->key_unserialize(bin2hex(base64_decode($ephemeralPublickey_uncompressed_raw)));
+
         var_dump( $ephemeral_point) ;
+
         $ephemeralPublickey_uncompressed = new PublicKey($ephemeral_point);
 
-        $ephemeralPublicKey = $this->publickey_serialize($ephemeralPublickey_uncompressed);;
+        $ephemeralPublicKey = $this->publickey_serialize($ephemeralPublickey_uncompressed);
+        //resource version one
+        $this->resource_version1();
 
-        echo $ephemeralPublicKey;
 
+        echo $ephemeralPublicKey.PHP_EOL.PHP_EOL;
+
+    }
+    public function resource_version1(){
+        //Resource version 1 
+        $form_data_str = 'random string generated for testing';
+        $algorithm = 'aes-256-ctr';
+        $sKey = '1lgs2gjwjPZpeqUHlYD9ktJBXfsuH5al'; 
+        $iv = '0000000000000000';
+        // Encrypt
+        $encrypted_data = bin2hex(openssl_encrypt($form_data_str, $algorithm, $sKey, OPENSSL_RAW_DATA, $iv));
+        echo "Encrypted: ".$encrypted_data.PHP_EOL;
+        //Decrypt
+        $decrypted_data = openssl_decrypt(pack('H*', $encrypted_data), $algorithm, $sKey, OPENSSL_RAW_DATA, $iv);
+        echo "<br>Decrypted: ".$decrypted_data.PHP_EOL;
+        //resource version 1 finished
     }
     /**
      * @param string           $data
@@ -137,11 +169,16 @@ class TestEncryptionEllipticCurve extends Command
 
         return $content;
     }
+    //1.2.840.10045.2.1
+    //ANSI X9.62 standard (1998) "Public Key Cryptography for the Financial Services Industry: The Elliptic Curve Digital Signature Algorithm (ECDSA)"
+   //1.2.840.10045.3.1.7
+   //256-bit Elliptic Curve Cryptography (ECC), also known as National Institute of Standards and Technology (NIST) P-256
+
     public function format(PublicKey $key): string
     {
         $sequence = new Sequence(
             new Sequence(
-                new ObjectIdentifier('1.2.840.10045.2.1'),
+                new ObjectIdentifier('1.2.840.10045.2.1'), 
                 new ObjectIdentifier('1.2.840.10045.3.1.7')
             ),
             new BitString($this->point_serialize($key->getPoint()))
