@@ -10,7 +10,7 @@ namespace App\Console\Commands;
  *
  */
 
-class ECIESManager
+class ECIESManager_GooglePay
 {
     protected $public_key;
     protected $private_key;

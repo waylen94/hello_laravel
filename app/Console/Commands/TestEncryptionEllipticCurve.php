@@ -19,8 +19,7 @@ use Mdanter\Ecc\Serializer\PrivateKey\PemPrivateKeySerializer;
 use Mdanter\Ecc\Serializer\PrivateKey\DerPrivateKeySerializer;
 use Mdanter\Ecc\Serializer\PublicKey\DerPublicKeySerializer;
 use Mdanter\Ecc\Serializer\PublicKey\PemPublicKeySerializer;
-
-use App\Console\Commands\ECIESManager;
+use App\Console\Commands\ECIES_Scheme\ECIESManager_GooglePay;
 
 
 class TestEncryptionEllipticCurve extends Command
@@ -134,7 +133,7 @@ class TestEncryptionEllipticCurve extends Command
         //3. HASH_HMAC_KDF_SHA256 GENERATING 512 BIT SYMETRIC KEY and split for symmetrical Key 256 + MAC_Verify_Key 256  
         // $hardcode_label_info = ord('G')ord('o').ord('o').ord('g)'.ord('l').ord('e');
 
-        $ECIESEManager = new ECIESEManager($public_key, $private_key,'json');
+        $ECIESEManager = new ECIESEManager_GooglePay($public_key, $private_key,'json');
         $C0 = base64_decode($ephemeral_public_key);
 
         $ciphertext = base64_decode($encrypted_message);
