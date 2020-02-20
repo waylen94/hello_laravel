@@ -1,20 +1,5 @@
 <?php
-
-use Mdanter\Ecc\EccFactory;
-use Mdanter\Ecc\Primitives\Point;
-use Mdanter\Ecc\Primitives\PointInterface;
-use Mdanter\Ecc\Random\RandomGeneratorFactory;
-use Mdanter\Ecc\Serializer\Point\CompressedPointSerializer;
-use Mdanter\Ecc\Serializer\Util\CurveOidMapper;
-use Mdanter\Ecc\Serializer\PrivateKey\PemPrivateKeySerializer;
-use Mdanter\Ecc\Serializer\PrivateKey\DerPrivateKeySerializer;
-use Mdanter\Ecc\Serializer\PublicKey\DerPublicKeySerializer;
-use Mdanter\Ecc\Serializer\PublicKey\PemPublicKeySerializer;
-use Contracts\DecryptException;
-use Contracts\EncryptException;
-use Contracts\Encrypter as EncrypterContract;
-
-
+namespace App\Console\Commands;
 /*
  *
  * Partial implementation of ECIES key encapsulation (ElGamal)
@@ -27,39 +12,14 @@ use Contracts\Encrypter as EncrypterContract;
 
 class ECIESEncrypter implements EncrypterContract
 {
-    /**
-     * The encryption key string in PEM format.
-     *
-     * @var string
-     */
     protected $public_key;
 
-    /**
-     * The decryption key string in PEM format.
-     *
-     * @var string
-     */
     protected $private_key;
-
-    /**
-     * Config for ECIES modes
-     *
-     * @var string
-     */
-    protected $single_hash_mode = true;
-
-    /**
-     * Length (in bytes) of the prime field for the chosen curve.
-     * All calculated values are less than this so can be padded up to this length
-     *
-     * @var int
-     */
+    protected $single_hash_mode = true; // should be false
     protected $prime_length;
-
     protected $adapter;
     protected $compressed_point_serializer;
     protected $random_number_generator;
-
     /**
      * The ephemeral public point
      *
@@ -125,7 +85,7 @@ class ECIESEncrypter implements EncrypterContract
      *
      * @var int
      */
-    protected $kdf_one_or_two = 2;
+    protected $kdf_one_or_two = 1;
 
     /**
      * The length of the KDF generated hash (in bytes). Must ensure there are enough bytes for
@@ -140,7 +100,7 @@ class ECIESEncrypter implements EncrypterContract
      *
      * @var string
      */
-    protected $hash_algorithm = 'sha512';
+    protected $hash_algorithm = 'sha256';
 
     const PERMITTED_CURVES = [
         'secp112r1',
@@ -168,7 +128,7 @@ class ECIESEncrypter implements EncrypterContract
      * @throws \RuntimeException
      */
 
-    public function __construct($public_key, $private_key, $output_structure = self::ISO_FORMAT)
+    public function __construct($public_key, $private_key, $output_structure = null)
     {
         if(is_null($public_key) && is_null($private_key)){
             throw new RuntimeException('Either public key or private key must be set in env(\'ECC_PUBLIC_KEY_PATH\') and env(\'ECC_PRIVATE_KEY_PATH\'). Could not locate either key');
@@ -210,7 +170,7 @@ class ECIESEncrypter implements EncrypterContract
      *
      * @param  string  $curve
      */
-    protected function setGeneratorForCurve(string $curve = 'nistp521')
+    protected function setGeneratorForCurve($curve)
     {
         switch($curve){
             case 'secp112r1':
@@ -319,7 +279,8 @@ class ECIESEncrypter implements EncrypterContract
 
     /**
      * This corresponds to ISO18033-2 - KEM.Encrypt(public_key, options)
-     * No OldCofactorMode, CofactorMode or CheckMode currently supported
+     * No OldCofactorMode, CofactorMode or CheckMode currently supported 
+     * Google Pay specification 4 parameters Corresponded with encryption 
      * @param \GMP $r
      * @return string
      */
@@ -328,7 +289,10 @@ class ECIESEncrypter implements EncrypterContract
         if(is_null($this->public_key)){
             throw new EncryptException('Could not encrypt without the public key');
         }
-        // If you're unfamiliar with ECIES, it might be helpful to think of ECIES as similar to Elliptic Curve Diffie-Hellman key exchange, only using an ephemeral private key ($r) to derive an ephemeral public point ($gTilde), which is then sent with the ciphertext and used on the other side to reconstruct the shared secret.
+        // If you're unfamiliar with ECIES, it might be helpful to think of ECIES 
+        //as similar to Elliptic Curve Diffie-Hellman key exchange, 
+        //only using an ephemeral private key ($r) to derive an ephemeral public point 
+        //($gTilde), which is then sent with the ciphertext and used on the other side to reconstruct the shared secret.
 
         // $h is the permanent public point, which is the x (the permanent private key) times the generator
         // i.e. $h = $this->generator_point->mul($private_key)
@@ -370,7 +334,7 @@ class ECIESEncrypter implements EncrypterContract
     {
         $iv = random_bytes(16); // 16 byte IV because block size is 128-bit, even with 256 bit key
 
-        $ciphertext = \openssl_encrypt(igbinary_serialize($value), 'AES-256-CBC', $this->derived_symmetric_key, 0, $iv);
+        $ciphertext = \openssl_encrypt(igbinary_serialize($value), 'AES-256-CTR', $this->derived_symmetric_key, 0, $iv);
 
         if ($ciphertext === false) {
             throw new EncryptException('Could not encrypt the data.');

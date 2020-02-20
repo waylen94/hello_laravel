@@ -20,6 +20,8 @@ use Mdanter\Ecc\Serializer\PrivateKey\DerPrivateKeySerializer;
 use Mdanter\Ecc\Serializer\PublicKey\DerPublicKeySerializer;
 use Mdanter\Ecc\Serializer\PublicKey\PemPublicKeySerializer;
 
+use App\Console\Commands\ECIES_Scheme_Experiment;
+
 
 class TestEncryptionEllipticCurve extends Command
 {
@@ -61,36 +63,36 @@ class TestEncryptionEllipticCurve extends Command
 
         //corresponded public and private key retrieved from Google Tink Library
        $private_key_simulation = "MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgCPSuFr4iSIaQprjj"
-       + "chHPyDu2NXFe0vDBoTpPkYaK9dehRANCAATnaFz/vQKuO90pxsINyVNWojabHfbx"
-       + "9qIJ6uD7Q7ZSxmtyo/Ez3/o2kDT8g0pIdyVIYktCsq65VoQIDWSh2Bdm";
+       ."chHPyDu2NXFe0vDBoTpPkYaK9dehRANCAATnaFz/vQKuO90pxsINyVNWojabHfbx"
+       ."9qIJ6uD7Q7ZSxmtyo/Ez3/o2kDT8g0pIdyVIYktCsq65VoQIDWSh2Bdm";
 
        $public_key_simulation = "BOdoXP+9Aq473SnGwg3JU1aiNpsd9vH2ognq4PtDtlLGa3Kj8TPf+jaQNPyDSkh3JUhiS0KyrrlWhAgNZKHYF2Y=";
 
        $Google_provided_public_Key = "{\n"
-        + "  \"keys\": [\n"
-        + "    {\n"
-        + "      \"keyValue\": \"MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEPYnHwS8uegWAewQtlxizmLFynw"
-        + "HcxRT1PK07cDA6/C4sXrVI1SzZCUx8U8S0LjMrT6ird/VW7be3Mz6t/srtRQ==\",\n"
-        + "      \"protocolVersion\": \"ECv1\"\n"
-        + "    },\n"
-        + "    {\n"
-        + "      \"keyValue\": \"MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE/1+3HBVSbdv+j7NaArdgMyoSAM"
-        + "43yRydzqdg1TxodSzA96Dj4Mc1EiKroxxunavVIvdxGnJeFViTzFvzFRxyCw==\",\n"
-        + "      \"keyExpiration\": \""
-        + Instant.now().plus(Duration.standardDays(1)).getMillis()
-        + "\",\n"
-        + "      \"protocolVersion\": \"ECv2\"\n"
-        + "    },\n"
-        + "    {\n"
-        + "      \"keyValue\": \"MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAENXvYqxD5WayKYhuXQevdGdLA8i"
-        + "fV4LsRS2uKvFo8wwyiwgQHB9DiKzG6T/P1Fu9Bl7zWy/se5Dy4wk1mJoPuxg==\",\n"
-        + "      \"keyExpiration\": \""
-        + Instant.now().plus(Duration.standardDays(1)).getMillis()
-        + "\",\n"
-        + "      \"protocolVersion\": \"ECv2SigningOnly\"\n"
-        + "    },\n"
-        + "  ],\n"
-        + "}";
+        ."  \"keys\": [\n"
+        ."    {\n"
+        . "      \"keyValue\": \"MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEPYnHwS8uegWAewQtlxizmLFynw"
+        . "HcxRT1PK07cDA6/C4sXrVI1SzZCUx8U8S0LjMrT6ird/VW7be3Mz6t/srtRQ==\",\n"
+        . "      \"protocolVersion\": \"ECv1\"\n"
+        . "    },\n"
+        . "    {\n"
+        . "      \"keyValue\": \"MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE/1+3HBVSbdv+j7NaArdgMyoSAM"
+        . "43yRydzqdg1TxodSzA96Dj4Mc1EiKroxxunavVIvdxGnJeFViTzFvzFRxyCw==\",\n"
+        . "      \"keyExpiration\": \""
+        . 1542394027316
+        . "\",\n"
+        . "      \"protocolVersion\": \"ECv2\"\n"
+        . "    },\n"
+        . "    {\n"
+        . "      \"keyValue\": \"MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAENXvYqxD5WayKYhuXQevdGdLA8i"
+        . "fV4LsRS2uKvFo8wwyiwgQHB9DiKzG6T/P1Fu9Bl7zWy/se5Dy4wk1mJoPuxg==\",\n"
+        . "      \"keyExpiration\": \""
+        . 1542394027316
+        . "\",\n"
+        . "      \"protocolVersion\": \"ECv2SigningOnly\"\n"
+        . "    },\n"
+        . "  ],\n"
+        . "}";
 
     $GOOGLE_SIGNING_EC_V2_INTERMEDIATE_PUBLIC_KEY_X509_BASE64 = "";
 
@@ -101,24 +103,44 @@ class TestEncryptionEllipticCurve extends Command
     $RECIPIENT_ID = "someRecipient";
 
     $signed_message = "{"
-        + "\"protocolVersion\":\"ECv1\","
-        + "\"signedMessage\":"
-        + ("\"{"
-            + "\\\"tag\\\":\\\"ZVwlJt7dU8Plk0+r8rPF8DmPTvDiOA1UAoNjDV+SqDE\\\\u003d\\\","
-            + "\\\"ephemeralPublicKey\\\":\\\"BPhVspn70Zj2Kkgu9t8+ApEuUWsI/zos5whGCQBlgOkuYagOis7"
-            + "qsrcbQrcprjvTZO3XOU+Qbcc28FSgsRtcgQE\\\\u003d\\\","
-            + "\\\"encryptedMessage\\\":\\\"12jUObueVTdy\\\"}\",")
-        + "\"signature\":\"MEQCIDxBoUCoFRGReLdZ/cABlSSRIKoOEFoU3e27c14vMZtfAiBtX3pGMEpnw6mSAbnagC"
-        + "CgHlCk3NcFwWYEyxIE6KGZVA\\u003d\\u003d\"}";
+        . "\"protocolVersion\":\"ECv1\","
+        . "\"signedMessage\":"
+        . ("\"{"
+            . "\\\"tag\\\":\\\"ZVwlJt7dU8Plk0+r8rPF8DmPTvDiOA1UAoNjDV+SqDE\\\\u003d\\\","
+            . "\\\"ephemeralPublicKey\\\":\\\"BPhVspn70Zj2Kkgu9t8+ApEuUWsI/zos5whGCQBlgOkuYagOis7"
+            . "qsrcbQrcprjvTZO3XOU+Qbcc28FSgsRtcgQE\\\\u003d\\\","
+            . "\\\"encryptedMessage\\\":\\\"12jUObueVTdy\\\"}\",")
+        . "\"signature\":\"MEQCIDxBoUCoFRGReLdZ/cABlSSRIKoOEFoU3e27c14vMZtfAiBtX3pGMEpnw6mSAbnagC"
+        . "CgHlCk3NcFwWYEyxIE6KGZVA\\u003d\\u003d\"}";
 
 
         echo "Beigining Testing ECC Algorithm".PHP_EOL.PHP_EOL;
         
         //1. receive all needed resource for decryption -1. ephemeral_publick_key; -2. private_key -3. encrypted_message 
-        $signed_message_array = json_decode($signed_message,true);
-        $ephemeral_public_key = $signed_message_array['signedMessage']['ephemeralPublickey'];
+        $signed_message= json_decode($signed_message);
+        $ephemeral_public_key = json_decode($signed_message->signedMessage)->ephemeralPublicKey;
         $private_key = $private_key_simulation;
-        $encrypted_message = $signed_message_array['signedMesage']['encyptedMessage'];
+        $encrypted_message = json_decode($signed_message->signedMessage)->encryptedMessage;
+
+        //Testing all the needed message retrieve successful
+        // echo $private_key.$ephemeral_public_key.$encrypted_message.PHP_EOL;
+
+        //2. Generating shared Key 
+        $this->encrypter = new ECIESEncrypter($public_key, $private_key, ECIESEncrypter::JSON_FORMAT);
+
+        //Testing generated Shared Key
+
+        //3. HASH_HMAC_KDF_SHA256 GENERATING 512 BIT SYMETRIC KEY and split for symmetrical Key 256 + MAC_Verify_Key 256  
+        // $hardcode_label_info = ord('G')ord('o').ord('o').ord('g)'.ord('l').ord('e');
+        $hardcode_label_info =  iconv("UTF-8", "ASCII", 'Google');
+        
+        //Testing generated symmetric Key
+
+        //4. Decrypte using AES_256_CTR 
+
+
+        //Testing Decrypted_text
+        
 
 
 
@@ -126,26 +148,6 @@ class TestEncryptionEllipticCurve extends Command
 
 
 
-
-
-
-
-
-
-        // $ephemeralPublickey_uncompressed_raw = "BOdoXP+9Aq473SnGwg3JU1aiNpsd9vH2ognq4PtDtlLGa3Kj8TPf+jaQNPyDSkh3JUhiS0KyrrlWhAgNZKHYF2Y=";
-
-        // $ephemeral_point = $this->key_unserialize(bin2hex(base64_decode($ephemeralPublickey_uncompressed_raw)));
-
-        // var_dump( $ephemeral_point) ;
-
-        // $ephemeralPublickey_uncompressed = new PublicKey($ephemeral_point);
-
-        // $ephemeralPublicKey = $this->publickey_serialize($ephemeralPublickey_uncompressed);
-        // //resource version one
-        // $this->resource_version1();
-
-
-        echo $ephemeralPublicKey.PHP_EOL.PHP_EOL;
     }
 
 
