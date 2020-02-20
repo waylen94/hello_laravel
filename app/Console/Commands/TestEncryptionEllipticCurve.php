@@ -20,11 +20,12 @@ use Mdanter\Ecc\Serializer\PrivateKey\DerPrivateKeySerializer;
 use Mdanter\Ecc\Serializer\PublicKey\DerPublicKeySerializer;
 use Mdanter\Ecc\Serializer\PublicKey\PemPublicKeySerializer;
 
-use App\Console\Commands\ECIES_Scheme_Experiment;
+use App\Console\Commands\ECIESManager;
 
 
 class TestEncryptionEllipticCurve extends Command
 {
+
     /**
      * The name and signature of the console command.
      *
@@ -117,41 +118,40 @@ class TestEncryptionEllipticCurve extends Command
         echo "Beigining Testing ECC Algorithm".PHP_EOL.PHP_EOL;
         
         //1. receive all needed resource for decryption -1. ephemeral_publick_key; -2. private_key -3. encrypted_message 
+        $public_key = null; // set it if we would like to hack Google encryption
         $signed_message= json_decode($signed_message);
         $ephemeral_public_key = json_decode($signed_message->signedMessage)->ephemeralPublicKey;
         $private_key = $private_key_simulation;
         $encrypted_message = json_decode($signed_message->signedMessage)->encryptedMessage;
-
+        $mac_tag =   json_decode($signed_message->signedMessage)->tag;
         //Testing all the needed message retrieve successful
         // echo $private_key.$ephemeral_public_key.$encrypted_message.PHP_EOL;
+        
 
-        //2. Generating shared Key 
-        $this->encrypter = new ECIESEncrypter($public_key, $private_key, ECIESEncrypter::JSON_FORMAT);
+        
 
-        //Testing generated Shared Key
-
+        //2. Generating shared Key
         //3. HASH_HMAC_KDF_SHA256 GENERATING 512 BIT SYMETRIC KEY and split for symmetrical Key 256 + MAC_Verify_Key 256  
         // $hardcode_label_info = ord('G')ord('o').ord('o').ord('g)'.ord('l').ord('e');
+
+        $ECIESEManager = new ECIESEManager($public_key, $private_key,'json');
+        $C0 = base64_decode($ephemeral_public_key);
+
+        $ciphertext = base64_decode($encrypted_message);
+        $mac = base64_decode($mac_tag);
         $hardcode_label_info =  iconv("UTF-8", "ASCII", 'Google');
+        $google_hkdf_iv = \hex2bin('00000000000000000000000000000000');
         
-        //Testing generated symmetric Key
-
-        //4. Decrypte using AES_256_CTR 
-
-
-        //Testing Decrypted_text
+        $ECIESEManager->reconstructSharedSecret($C0);
         
-
-
-
-
-
+        $decrypted_text = decryptSymmetric($google_hkdf_iv, $ciphertext, $mac, $hardcode_label_info);
+        echo $decrypted_text;
+    
 
 
     }
 
-
-    public function resource_version1(){
+    public function test_resource_version1(){
         //Resource version 1 
         $form_data_str = 'random string generated for testing';
         $algorithm = 'aes-256-ctr';

@@ -10,12 +10,11 @@ namespace App\Console\Commands;
  *
  */
 
-class ECIESEncrypter implements EncrypterContract
+class ECIESManager
 {
     protected $public_key;
-
     protected $private_key;
-    protected $single_hash_mode = true; // should be false
+    protected $single_hash_mode = false; // should be false in the GooglePayCase
     protected $prime_length;
     protected $adapter;
     protected $compressed_point_serializer;
@@ -82,7 +81,7 @@ class ECIESEncrypter implements EncrypterContract
     /**
      * Either 1 or 2.
      * Determines whether to implement KDF1 or KDF2 from ISO-18033-2
-     *
+     * GoolePay is based on kdf 1
      * @var int
      */
     protected $kdf_one_or_two = 1;
@@ -284,8 +283,7 @@ class ECIESEncrypter implements EncrypterContract
      * @param \GMP $r
      * @return string
      */
-    protected function generateEphemeralKeys(\GMP $r)
-    {
+    protected function generateEphemeralKeys(\GMP $r){
         if(is_null($this->public_key)){
             throw new EncryptException('Could not encrypt without the public key');
         }
@@ -321,7 +319,6 @@ class ECIESEncrypter implements EncrypterContract
         return $this->deriveKeysFromEphemeralPoints();
     }
 
-
     /**
      * This corresponds to ISO18033-2 - DEM.Encrypt(symmetric_key, label, message)
      *
@@ -330,8 +327,7 @@ class ECIESEncrypter implements EncrypterContract
      *
      * @return string
      */
-    protected function encryptSymmetric($value, $label)
-    {
+    protected function encryptSymmetric($value, $label){
         $iv = random_bytes(16); // 16 byte IV because block size is 128-bit, even with 256 bit key
 
         $ciphertext = \openssl_encrypt(igbinary_serialize($value), 'AES-256-CTR', $this->derived_symmetric_key, 0, $iv);
@@ -357,9 +353,9 @@ class ECIESEncrypter implements EncrypterContract
     /**
      * This corresponds to ISO18033-2 - HC.Decrypt(private_key, label, ciphertext)
      *
-     * @param $payload
-     * @param $label
-     * @param $single_hash_mode
+     * @param $payload - encrypted message can accepted in both iso18033-2 and 'json'
+     * @param $label - contracted info
+     * @param $single_hash_mode - 1 or 0
      *
      * @return string
      */
@@ -389,6 +385,7 @@ class ECIESEncrypter implements EncrypterContract
 
             $C0 = base64_decode($payload['ephemeral_public_point']);
 
+            //Google Pay IV should be ''
             $iv = base64_decode($payload['iv']);
 
             $ciphertext = base64_decode($payload['ciphertext']);
@@ -568,7 +565,7 @@ class ECIESEncrypter implements EncrypterContract
             throw new DecryptException('The MAC is invalid.');
         }
 
-        $decrypted = \openssl_decrypt(base64_encode($ciphertext), 'AES-256-CBC', $this->derived_symmetric_key, 0, $iv);
+        $decrypted = \openssl_decrypt(base64_encode($ciphertext), 'AES-256-CTR', $this->derived_symmetric_key, 0, $iv);
 
         if ($decrypted === false) {
             throw new DecryptException('Could not decrypt the data.');
