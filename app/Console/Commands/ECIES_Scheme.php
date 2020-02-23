@@ -14,7 +14,7 @@ class ECIESManager_GooglePay
 {
     protected $public_key;
     protected $private_key;
-    protected $single_hash_mode = false; // should be false in the GooglePayCase
+    protected $single_hash_mode = false;  // should be false in the GooglePayCase
     protected $prime_length;
     protected $adapter;
     protected $compressed_point_serializer;
