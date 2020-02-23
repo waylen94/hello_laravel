@@ -55,6 +55,7 @@ class testGooglePay extends Command{
         $public_key = null;
         $private_key = file_get_contents($hardcode_private_key_addr,true);
 
+        echo "encryptedMessage:  ".$encryptedMessage;
         $ciphertext = base64_decode($encryptedMessage);
         $mac = base64_decode($mac_tag);
         $hardcode_label_info =  iconv("UTF-8", "ASCII", 'Google');
